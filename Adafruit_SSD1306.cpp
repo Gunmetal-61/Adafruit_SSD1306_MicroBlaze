@@ -20,6 +20,7 @@ All text above, and the splash screen below must be included in any redistributi
 #include <stdint.h>
 #include <xgpio.h>
 #include <xspi.h>
+#include <xiic.h>
 
 #include "Adafruit_GFX.h"
 #include "Adafruit_SSD1306.h"
@@ -132,6 +133,15 @@ void Adafruit_SSD1306::drawPixel(int16_t x, int16_t y, uint16_t color) {
 
 Adafruit_SSD1306::Adafruit_SSD1306(XSpi *SPI, XGpio *GPIO, int8_t RST, int8_t DC) : Adafruit_GFX(SSD1306_LCDWIDTH, SSD1306_LCDHEIGHT) {
   spi = SPI;
+  iic = nullptr;
+  gpio = GPIO;
+  rst = RST;
+  dc = DC;
+}
+
+Adafruit_SSD1306::Adafruit_SSD1306(XIic *IIC, XGpio *GPIO, int8_t RST, int8_t DC) : Adafruit_GFX(SSD1306_LCDWIDTH, SSD1306_LCDHEIGHT) {
+  spi = nullptr;
+  iic = IIC;
   gpio = GPIO;
   rst = RST;
   dc = DC;
@@ -168,10 +178,11 @@ void Adafruit_SSD1306::begin(uint8_t vccstate, uint8_t i2caddr, bool reset) {
   ssd1306_command(0x0);                                   // no offset
   ssd1306_command(SSD1306_SETSTARTLINE | 0x0);            // line #0
   ssd1306_command(SSD1306_CHARGEPUMP);                    // 0x8D
-  if (vccstate == SSD1306_EXTERNALVCC)
-    { ssd1306_command(0x10); }
-  else
-    { ssd1306_command(0x14); }
+  if (vccstate == SSD1306_EXTERNALVCC) {
+	  ssd1306_command(0x10);
+  } else {
+	ssd1306_command(0x14);
+  }
   ssd1306_command(SSD1306_MEMORYMODE);                    // 0x20
   ssd1306_command(0x00);                                  // 0x0 act like ks0108
   ssd1306_command(SSD1306_SEGREMAP | 0x1);
@@ -183,31 +194,36 @@ void Adafruit_SSD1306::begin(uint8_t vccstate, uint8_t i2caddr, bool reset) {
   ssd1306_command(SSD1306_SETCONTRAST);                   // 0x81
   ssd1306_command(0x8F);
 
-#elif defined SSD1306_128_64
+  #elif defined SSD1306_128_64
   ssd1306_command(SSD1306_SETCOMPINS);                    // 0xDA
   ssd1306_command(0x12);
   ssd1306_command(SSD1306_SETCONTRAST);                   // 0x81
-  if (vccstate == SSD1306_EXTERNALVCC)
-    { ssd1306_command(0x9F); }
-  else
-    { ssd1306_command(0xCF); }
+  if (vccstate == SSD1306_EXTERNALVCC) {
+	ssd1306_command(0x9F);
+  }
+  else {
+	ssd1306_command(0xCF);
+  }
 
-#elif defined SSD1306_96_16
-  ssd1306_command(SSD1306_SETCOMPINS);                    // 0xDA
-  ssd1306_command(0x2);   //ada x12
-  ssd1306_command(SSD1306_SETCONTRAST);                   // 0x81
-  if (vccstate == SSD1306_EXTERNALVCC)
-    { ssd1306_command(0x10); }
-  else
-    { ssd1306_command(0xAF); }
+  #elif defined SSD1306_96_16
+	ssd1306_command(SSD1306_SETCOMPINS);                    // 0xDA
+	ssd1306_command(0x2);   //ada x12
+	ssd1306_command(SSD1306_SETCONTRAST);                   // 0x81
+	if (vccstate == SSD1306_EXTERNALVCC) {
+	  ssd1306_command(0x10);
+	} else {
+      ssd1306_command(0xAF);
+	}
 
-#endif
+  #endif
 
   ssd1306_command(SSD1306_SETPRECHARGE);                  // 0xd9
-  if (vccstate == SSD1306_EXTERNALVCC)
-    { ssd1306_command(0x22); }
-  else
-    { ssd1306_command(0xF1); }
+  if (vccstate == SSD1306_EXTERNALVCC) {
+	ssd1306_command(0x22);
+  }
+  else {
+	ssd1306_command(0xF1);
+  }
   ssd1306_command(SSD1306_SETVCOMDETECT);                 // 0xDB
   ssd1306_command(0x40);
   ssd1306_command(SSD1306_DISPLAYALLON_RESUME);           // 0xA4
@@ -229,9 +245,13 @@ void Adafruit_SSD1306::invertDisplay(uint8_t i) {
 
 void Adafruit_SSD1306::ssd1306_command(uint8_t c) {
   XGpio_DiscreteClear(gpio, 1, 1 << dc);
-  (void)XSpi_SetSlaveSelect(spi, 1);
-  (void)XSpi_Transfer(spi, &c, NULL, sizeof(c));
-  (void)XSpi_SetSlaveSelect(spi, 0);
+  if (spi != nullptr && iic == nullptr) {
+	(void)XSpi_SetSlaveSelect(spi, 1);
+	(void)XSpi_Transfer(spi, &c, NULL, sizeof(c));
+	(void)XSpi_SetSlaveSelect(spi, 0);
+  } else if (spi == nullptr && iic != nullptr) {
+
+  }
 }
 
 // startscrollright
@@ -341,9 +361,14 @@ void Adafruit_SSD1306::display(void) {
   #endif
 
   XGpio_DiscreteSet(gpio, 1, 1 << dc);
-  (void)XSpi_SetSlaveSelect(spi, 1);
-  (void)XSpi_Transfer(spi, buffer, NULL, sizeof(buffer));
-  (void)XSpi_SetSlaveSelect(spi, 0);
+
+  if (spi != nullptr && iic == nullptr) {
+	(void)XSpi_SetSlaveSelect(spi, 1);
+	(void)XSpi_Transfer(spi, buffer, NULL, sizeof(buffer));
+	(void)XSpi_SetSlaveSelect(spi, 0);
+  } else if (spi == nullptr && iic != nullptr) {
+
+  }
 }
 
 // clear everything

@@ -20,6 +20,7 @@ All text above, and the splash screen must be included in any redistribution
 
 #include <stdint.h>
 #include <xgpio.h>
+#include <xiic.h>
 #include <xspi.h>
 
 #include "Adafruit_GFX.h"
@@ -120,6 +121,7 @@ All text above, and the splash screen must be included in any redistribution
 class Adafruit_SSD1306 : public Adafruit_GFX {
  public:
   Adafruit_SSD1306(XSpi *SPI, XGpio *GPIO, int8_t RST, int8_t DC);
+  Adafruit_SSD1306(XIic *IIC, XGpio *GPIO, int8_t RST, int8_t DC);
 
   void begin(uint8_t switchvcc = SSD1306_SWITCHCAPVCC, uint8_t i2caddr = SSD1306_I2C_ADDRESS, bool reset=true);
   void ssd1306_command(uint8_t c);
@@ -145,6 +147,7 @@ class Adafruit_SSD1306 : public Adafruit_GFX {
  private:
   int8_t _vccstate, dc, rst;
   XSpi *spi;
+  XIic *iic;
   XGpio *gpio;
 
   inline void drawFastVLineInternal(int16_t x, int16_t y, int16_t h, uint16_t color) __attribute__((always_inline));

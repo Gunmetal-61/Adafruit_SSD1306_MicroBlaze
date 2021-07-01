@@ -1,4 +1,6 @@
-# Adafruit_SSD1306
+# Adafruit_SSD1306_Microblaze
+
+This is a fork of [jmwilson's repository](https://github.com/jmwilson/Adafruit_SSD1306_MicroBlaze) which itself is a fork of the [adafruit/Adafruit_SSD1306](https://github.com/adafruit/Adafruit_SSD1306) display library adapting .
 
 A port of [adafruit/Adafruit_SSD1306](https://github.com/adafruit/Adafruit_SSD1306) for the Xilinx MicroBlaze processor.
 
